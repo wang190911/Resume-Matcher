@@ -18,6 +18,18 @@ import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/lib/i18n';
 import { getApplicationDetail, updateApplication, type ApplicationDetail } from '@/lib/api/tracker';
 
+export function toDateTimeLocalValue(value: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+export function dateTimeLocalToIso(value: string): string {
+  return new Date(value).toISOString();
+}
+
 interface CardDetailModalProps {
   applicationId: string | null;
   open: boolean;
@@ -38,6 +50,9 @@ export function CardDetailModal({
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
   const [notesError, setNotesError] = useState<string | null>(null);
+  const [interviewAt, setInterviewAt] = useState('');
+  const [savingInterviewAt, setSavingInterviewAt] = useState(false);
+  const [interviewAtError, setInterviewAtError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !applicationId) {
@@ -51,7 +66,9 @@ export function CardDetailModal({
         if (cancelled) return;
         setDetail(data);
         setNotes(data.notes ?? '');
+        setInterviewAt(toDateTimeLocalValue(data.interview_at));
         setNotesError(null);
+        setInterviewAtError(null);
       })
       .catch(() => {
         if (!cancelled) setDetail(null);
@@ -82,6 +99,24 @@ export function CardDetailModal({
       setNotesError(t('common.error'));
     } finally {
       setSavingNotes(false);
+    }
+  };
+
+  const saveInterviewAt = async (value: string | null) => {
+    if (!applicationId) return;
+    setSavingInterviewAt(true);
+    setInterviewAtError(null);
+    try {
+      const updated = await updateApplication(applicationId, {
+        interview_at: value ? dateTimeLocalToIso(value) : null,
+      });
+      setDetail((current) => (current ? { ...current, ...updated } : current));
+      setInterviewAt(toDateTimeLocalValue(updated.interview_at));
+      onUpdated();
+    } catch {
+      setInterviewAtError(t('common.error'));
+    } finally {
+      setSavingInterviewAt(false);
     }
   };
 
@@ -121,6 +156,62 @@ export function CardDetailModal({
                 {detail.job_content || t('tracker.modal.noJobDescription')}
               </div>
             </div>
+
+            {detail.interview_at && (
+              <div className="border border-black bg-paper-tint p-3">
+                <p className="font-mono text-[10px] uppercase tracking-wide text-ink-soft">
+                  {t('tracker.modal.interviewTime')}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-ink">
+                  {new Date(detail.interview_at).toLocaleString([], {
+                    dateStyle: 'long',
+                    timeStyle: 'short',
+                  })}
+                </p>
+              </div>
+            )}
+
+            {detail.status === 'interview' && (
+              <div className="space-y-1">
+                <Label htmlFor="card-interview-at">{t('tracker.modal.interviewTime')}</Label>
+                <input
+                  id="card-interview-at"
+                  type="datetime-local"
+                  value={interviewAt}
+                  onChange={(event) => setInterviewAt(event.target.value)}
+                  className="flex h-10 w-full border border-black bg-background px-3 font-mono text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <div className="flex items-center justify-end gap-3">
+                  {interviewAtError && (
+                    <span className="mr-auto font-mono text-xs text-destructive">
+                      {interviewAtError}
+                    </span>
+                  )}
+                  {detail.interview_at && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void saveInterviewAt(null)}
+                      disabled={savingInterviewAt}
+                    >
+                      {t('tracker.modal.clearInterviewTime')}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void saveInterviewAt(interviewAt)}
+                    disabled={savingInterviewAt || !interviewAt}
+                  >
+                    {savingInterviewAt ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      t('tracker.modal.saveInterviewTime')
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1">
               <Label htmlFor="card-notes">{t('tracker.modal.notes')}</Label>

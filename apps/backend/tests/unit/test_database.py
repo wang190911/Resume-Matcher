@@ -212,6 +212,7 @@ class TestApplications:
         a = await db.create_application(job_id="j1", resume_id="r1")
         assert a["status"] == "applied"
         assert a["position"] == 0
+        assert a["interview_at"] is None
         assert a["applied_at"] is not None  # applied → stamped
         b = await db.create_application(job_id="j2", resume_id="r2")
         assert b["position"] == 1  # appended to the column
@@ -219,6 +220,50 @@ class TestApplications:
     async def test_saved_status_has_no_applied_at(self, db):
         a = await db.create_application(job_id="j1", resume_id="r1", status="saved")
         assert a["applied_at"] is None
+
+    async def test_interview_time_round_trips_and_clears(self, db):
+        application = await db.create_application(job_id="j1", resume_id="r1")
+        interview_at = "2026-08-08T06:30:00+00:00"
+
+        updated = await db.update_application(
+            application["application_id"], {"interview_at": interview_at}
+        )
+        assert updated["interview_at"] == interview_at
+        fetched = await db.get_application(application["application_id"])
+        assert fetched["interview_at"] == interview_at
+
+        cleared = await db.update_application(
+            application["application_id"], {"interview_at": None}
+        )
+        assert cleared["interview_at"] is None
+
+    def test_interview_time_migration_is_idempotent(self, tmp_path):
+        engine = make_sync_engine(tmp_path / "old-applications.db")
+        try:
+            with engine.begin() as conn:
+                conn.exec_driver_sql(
+                    """
+                    CREATE TABLE applications (
+                        application_id TEXT PRIMARY KEY,
+                        job_id TEXT NOT NULL,
+                        resume_id TEXT NOT NULL
+                    )
+                    """
+                )
+
+            init_models_sync(engine)
+            init_models_sync(engine)
+
+            with engine.begin() as conn:
+                columns = (
+                    conn.exec_driver_sql("PRAGMA table_info(applications)")
+                    .mappings()
+                    .all()
+                )
+            names = [column["name"] for column in columns]
+            assert names.count("interview_at") == 1
+        finally:
+            engine.dispose()
 
     async def test_create_dedupes_on_job_and_resume(self, db):
         a = await db.create_application(job_id="j1", resume_id="r1")

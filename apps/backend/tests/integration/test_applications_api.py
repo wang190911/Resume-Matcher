@@ -141,6 +141,55 @@ class TestUpdateAndMove:
         assert body["notes"] == "Recruiter call Friday"
         assert body["company"] == "NewCo"
 
+    async def test_patch_interview_time_persists_across_status_changes(self, isolated_db):
+        card = await _seed_card(isolated_db, status="interview")
+        interview_at = "2026-08-08T14:30:00+08:00"
+        async with _client() as client:
+            saved = await client.patch(
+                f"/api/v1/applications/{card['application_id']}",
+                json={"interview_at": interview_at},
+            )
+            moved = await client.patch(
+                f"/api/v1/applications/{card['application_id']}",
+                json={"status": "accepted"},
+            )
+            detail = await client.get(
+                f"/api/v1/applications/{card['application_id']}"
+            )
+
+        assert saved.status_code == 200
+        assert saved.json()["interview_at"] == interview_at
+        assert moved.json()["interview_at"] == interview_at
+        assert detail.json()["interview_at"] == interview_at
+
+    async def test_patch_interview_time_rejects_invalid_or_naive_values(self, isolated_db):
+        card = await _seed_card(isolated_db, status="interview")
+        async with _client() as client:
+            invalid = await client.patch(
+                f"/api/v1/applications/{card['application_id']}",
+                json={"interview_at": "not-a-date"},
+            )
+            naive = await client.patch(
+                f"/api/v1/applications/{card['application_id']}",
+                json={"interview_at": "2026-08-08T14:30:00"},
+            )
+        assert invalid.status_code == 422
+        assert naive.status_code == 422
+
+    async def test_patch_interview_time_can_be_cleared(self, isolated_db):
+        card = await _seed_card(isolated_db, status="interview")
+        await isolated_db.update_application(
+            card["application_id"],
+            {"interview_at": "2026-08-08T06:30:00+00:00"},
+        )
+        async with _client() as client:
+            response = await client.patch(
+                f"/api/v1/applications/{card['application_id']}",
+                json={"interview_at": None},
+            )
+        assert response.status_code == 200
+        assert response.json()["interview_at"] is None
+
     async def test_patch_unknown_returns_404(self, isolated_db):
         async with _client() as client:
             resp = await client.patch("/api/v1/applications/nope", json={"notes": "x"})
