@@ -134,11 +134,13 @@ async def bulk_update_applications(request: BulkStatusUpdate) -> ApplicationActi
 
 @router.patch("/{application_id}", response_model=ApplicationResponse)
 async def update_application(application_id: str, request: ApplicationUpdate) -> ApplicationResponse:
-    """Update a card (status/position/notes/company/role/applied_at)."""
+    """Update a card, including its application and interview timestamps."""
     updates = request.model_dump(exclude_unset=True)
     # Normalize the enum to its stable string value for the data layer.
     if "status" in updates and updates["status"] is not None:
         updates["status"] = request.status.value
+    if "interview_at" in updates and request.interview_at is not None:
+        updates["interview_at"] = request.interview_at.isoformat()
     try:
         updated = await db.update_application(application_id, updates)
     except Exception as e:
