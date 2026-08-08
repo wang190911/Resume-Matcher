@@ -1040,6 +1040,12 @@
       "loadFailed": "応募を読み込めませんでした。",
       "moveFailed": "応募を移動できませんでした。",
       "deleteFailed": "応募を削除できませんでした。"
+    },
+    "manageColumns": {
+      "button": "管理",
+      "title": "列の管理",
+      "description": "ボードに表示するステータス列を選択してください。",
+      "keepOneVisible": "少なくとも1列は表示しておく必要があります。"
     }
   },
   "interviewPrep": {
