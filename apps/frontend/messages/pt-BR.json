@@ -1040,6 +1040,12 @@
       "loadFailed": "Não foi possível carregar as candidaturas.",
       "moveFailed": "Não foi possível mover a candidatura.",
       "deleteFailed": "Não foi possível excluir a(s) candidatura(s)."
+    },
+    "manageColumns": {
+      "button": "Gerenciar",
+      "title": "Gerenciar colunas",
+      "description": "Escolha quais colunas de status mostrar no quadro.",
+      "keepOneVisible": "Pelo menos uma coluna deve permanecer visível."
     }
   },
   "interviewPrep": {

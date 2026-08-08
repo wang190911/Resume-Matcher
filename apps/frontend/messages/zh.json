@@ -1040,6 +1040,12 @@
       "loadFailed": "无法加载申请。",
       "moveFailed": "无法移动该申请。",
       "deleteFailed": "无法删除该申请。"
+    },
+    "manageColumns": {
+      "button": "管理",
+      "title": "管理状态列",
+      "description": "选择在看板上显示哪些状态列。",
+      "keepOneVisible": "至少需保留一个可见列。"
     }
   },
   "interviewPrep": {

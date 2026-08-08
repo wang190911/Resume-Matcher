@@ -1040,6 +1040,12 @@
       "loadFailed": "Could not load applications.",
       "moveFailed": "Could not move the application.",
       "deleteFailed": "Could not delete the application(s)."
+    },
+    "manageColumns": {
+      "button": "Manage",
+      "title": "Manage Columns",
+      "description": "Choose which status columns to show on the board.",
+      "keepOneVisible": "At least one column must remain visible."
     }
   },
   "interviewPrep": {

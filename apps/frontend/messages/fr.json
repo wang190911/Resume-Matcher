@@ -1040,6 +1040,12 @@
       "loadFailed": "Impossible de charger les candidatures.",
       "moveFailed": "Impossible de déplacer la candidature.",
       "deleteFailed": "Impossible de supprimer la ou les candidatures."
+    },
+    "manageColumns": {
+      "button": "Gérer",
+      "title": "Gérer les colonnes",
+      "description": "Choisissez les colonnes de statut à afficher sur le tableau.",
+      "keepOneVisible": "Au moins une colonne doit rester visible."
     }
   },
   "interviewPrep": {
